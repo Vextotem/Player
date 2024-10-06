@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Braflix</title>
+    <title>RgShows Api 1</title>
     <script src="../../../js/devtoolsdetector.js" preload></script>
     <script src="../../../js/nocheats.js" preload></script>
     
@@ -19,23 +19,23 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            overflow: hidden;
+            overflow: hidden; /* Prevent scrolling */
         }
         #videoContainer {
             position: relative;
             width: 100%;
-            height: 75%;
-            margin: 0;
+            height: 75%; /* Set height to 75% */
+            margin: 0; /* Remove margins */
             background: #000;
             border: 2px solid #333;
             border-radius: 10px;
             overflow: hidden;
         }
         #videoPlayer {
-            width: 100%;
-            height: 100%;
+            width: 100%; /* Set width to 100% */
+            height: 100%; /* Set height to 100% */
             display: block;
-            object-fit: cover;
+            object-fit: cover; /* Ensure video covers the container */
         }
         #controls {
             text-align: center;
@@ -58,18 +58,17 @@
         .fa-language {
             margin-right: 5px;
         }
-        #noMediaMessage {
-            display: none;
-            text-align: center;
+        #errorMessage {
             color: #ff6666;
             font-size: 1.5rem;
+            display: none; /* Hidden by default */
         }
     </style>
 </head>
 <body>
     <div id="videoContainer">
         <video id="videoPlayer" controls></video>
-        <div id="noMediaMessage">No Media Available</div>
+        <div id="errorMessage">No Media Available</div>
     </div>
     <div id="controls">
         <label for="languageSelect"><i class="fas fa-language"></i> Select Language: </label>
@@ -81,9 +80,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             const videoPlayer = document.getElementById('videoPlayer');
             const languageSelect = document.getElementById('languageSelect');
-            const noMediaMessage = document.getElementById('noMediaMessage');
+            const errorMessage = document.getElementById('errorMessage');
             const urlParams = new URLSearchParams(window.location.search);
-            const tmdbId = urlParams.get('id');
+            const tmdbId = urlParams.get('id'); // Get TMDB ID from the URL
             const tmdbApiKey = 'f6e840332142f77746185ab4e67be858';
 
             if (!tmdbId) {
@@ -93,6 +92,7 @@
 
             const tmdbEndpoint = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${tmdbApiKey}`;
 
+            // Fetch movie details using the TMDB ID
             fetch(tmdbEndpoint)
                 .then(response => {
                     if (!response.ok) {
@@ -108,6 +108,7 @@
                     }
                     const mediaInfoEndpoint = `https://rgshowsapi-3o5h.onrender.com/api/v1/mediaInfo?id=${currentImdbId}`;
 
+                    // Fetch media info using IMDB ID
                     fetch(mediaInfoEndpoint)
                         .then(response => response.json())
                         .then(data => {
@@ -115,7 +116,8 @@
                                 const playlist = data.data.playlist;
                                 const key = data.data.key;
 
-                                languageSelect.innerHTML = '';
+                                // Populate language options for movies
+                                languageSelect.innerHTML = ''; // Clear previous options
                                 playlist.forEach((item, index) => {
                                     const option = document.createElement('option');
                                     option.value = index;
@@ -123,19 +125,21 @@
                                     languageSelect.appendChild(option);
                                 });
 
+                                // Play the first language by default
                                 playStream(playlist[0].file, key);
 
+                                // Change language event
                                 languageSelect.addEventListener('change', (event) => {
                                     const selectedIndex = event.target.value;
                                     playStream(playlist[selectedIndex].file, key);
                                 });
                             } else {
-                                displayNoMediaMessage();
+                                showErrorMessage(); // Show error message if no playable media is found
                             }
                         })
                         .catch(error => {
                             console.error('Error fetching media info:', error);
-                            displayNoMediaMessage();
+                            showErrorMessage(); // Show error message if fetching fails
                         });
                 })
                 .catch(error => {
@@ -160,31 +164,35 @@
                         videoPlayer.hls.attachMedia(videoPlayer);
                         videoPlayer.hls.on(Hls.Events.MANIFEST_PARSED, () => {
                             videoPlayer.play();
-                            requestFullscreen();
+                            requestFullscreen(); // Enter fullscreen when the video starts playing
+                        });
+                        videoPlayer.hls.on(Hls.Events.ERROR, (event, data) => {
+                            console.error('HLS error:', data);
                         });
                     } else {
-                        displayNoMediaMessage();
+                        showErrorMessage(); // Show error message if stream link fetching fails
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching stream link:', error);
-                    displayNoMediaMessage();
+                    showErrorMessage(); // Show error message if an error occurs during fetching
                 });
             }
 
-            function displayNoMediaMessage() {
-                videoPlayer.style.display = 'none';
-                noMediaMessage.style.display = 'block';
+            function showErrorMessage() {
+                videoPlayer.style.display = 'none'; // Hide the video player
+                errorMessage.style.display = 'block'; // Show the error message
             }
 
+            // Function to request fullscreen
             function requestFullscreen() {
                 if (videoPlayer.requestFullscreen) {
                     videoPlayer.requestFullscreen();
-                } else if (videoPlayer.mozRequestFullScreen) {
+                } else if (videoPlayer.mozRequestFullScreen) { // Firefox
                     videoPlayer.mozRequestFullScreen();
-                } else if (videoPlayer.webkitRequestFullscreen) {
+                } else if (videoPlayer.webkitRequestFullscreen) { // Chrome, Safari, and Opera
                     videoPlayer.webkitRequestFullscreen();
-                } else if (videoPlayer.msRequestFullscreen) {
+                } else if (videoPlayer.msRequestFullscreen) { // IE/Edge
                     videoPlayer.msRequestFullscreen();
                 }
             }
